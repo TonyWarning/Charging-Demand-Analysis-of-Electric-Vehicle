@@ -3,6 +3,8 @@ import pandas as pd
 from pandas import read_csv
 import os
 from chardet.universaldetector import UniversalDetector
+import time
+import sklearn
 
 def preWork(diradd):
 
@@ -73,13 +75,36 @@ def preWork(diradd):
     finalData.to_csv(os.path.join(diradd, 'finalData.csv'), encoding='utf-8', index=False)
     print('数据保存成功')
 
+def dataPreprocessing(fileadd):
+    data = read_csv(fileadd, encoding='utf-8', error_bad_lines=False)
+
+    # 取出有用的字段
+    select_cols = ['rating_energy', 'drive_range', 'start_time', 'start_soc', 'is_holiday', 'category']
+    data = data[select_cols]
+
+    # 根据category字段，10:行驶 20:停车 30:充电 筛选出 20和30的记录
+    data = data[(data['category'] == 20) | (data['category'] == 30)]
+
+    # 将category中的20和30替换为0和1
+    data['category'] = data['category'].replace(20, 0)
+    data['category'] = data['category'].replace(30, 1)
+
+    # 将start_time字段转换为时间格式
+    def timeTrans(timestamp):
+        return (timestamp % 86400000) / 86400000
+    data['start_time'] = data['start_time'].apply(timeTrans)
+
+    # save data
+    data.to_csv(diradd + '/preprocessed_data.csv', encoding='utf-8', index=False)
 
 if __name__ == '__main__':
     # Change to UTF-8 and concat all csv files
-    # diradd = 'D:\Data-Charging-Demand-Analysis-of-EV'
+    diradd = 'D:\Data-Charging-Demand-Analysis-of-EV'
     # preWork(diradd)
 
-    fileadd = 'D:/Data-Charging-Demand-Analysis-of-EV/topic5_2108_1.csv'
+    fileadd = 'D:/Data-Charging-Demand-Analysis-of-EV/finalData.csv'
+    dataPreprocessing(fileadd)
+
 
 
 
